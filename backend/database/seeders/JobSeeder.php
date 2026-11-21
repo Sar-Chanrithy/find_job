@@ -18,33 +18,54 @@ class JobSeeder extends Seeder
         DB::transaction(function () use ($rows) {
             foreach ($rows as $row) {
                 $company = Company::firstOrCreate(['slug' => Str::slug($row['company'])], [
-                    'name' => $row['company'], 'logo_text' => $row['logo'],
-                    'brand_color' => $row['color'], 'description' => 'Illustrative company for the DevHire learning project.',
+                    'name' => $row['company'],
+                    'logo_text' => $row['logo'] ?? strtoupper(substr($row['company'], 0, 3)),
+                    'brand_color' => $row['color'] ?? '#8250ce',
+                    'description' => 'Illustrative company for the DevHire learning project.',
                 ]);
-                preg_match_all('/[\d,]+/', $row['salary'], $salary);
-                JobPost::firstOrCreate(['slug' => Str::slug($row['company'].'-'.$row['title'])], [
-                    'company_id' => $company->id, 'title' => $row['title'],
-                    'category' => $row['category'], 'location' => $row['location'],
-                    'employment_type' => $row['type'], 'work_mode' => $row['mode'],
-                    'salary_min' => (int) str_replace(',', '', $salary[0][0]),
-                    'salary_max' => (int) str_replace(',', '', $salary[0][1]),
-                    'description' => "Join {$row['company']} as a {$row['title']} and help a growing team turn thoughtful ideas into useful experiences. This is an illustrative opportunity in {$row['location']}.",
-                    'responsibilities' => [
-                        "Collaborate with your team to deliver high-quality work in {$row['category']}.",
-                        'Bring fresh ideas and a thoughtful approach to everyday challenges.',
-                        'Share progress, ask questions, and help your teammates succeed.',
-                        'Learn from feedback and continuously develop your skills.',
-                    ],
-                    'requirements' => [
+
+                if (isset($row['salary_min'], $row['salary_max'])) {
+                    $min = (int) $row['salary_min'];
+                    $max = (int) $row['salary_max'];
+                } else {
+                    preg_match_all('/[\d,]+/', $row['salary'] ?? '0', $salary);
+                    $min = (int) str_replace(',', '', $salary[0][0] ?? 0);
+                    $max = (int) str_replace(',', '', $salary[0][1] ?? $min);
+                }
+
+                $requirements = is_array($row['requirements'] ?? null)
+                    ? $row['requirements']
+                    : (isset($row['requirements']) ? [$row['requirements']] : [
                         "Relevant skills or project experience for the {$row['title']} role.",
                         'Clear communication and a collaborative mindset.',
                         'Curiosity, ownership, and attention to detail.',
                         'A portfolio or CV that tells your story.',
-                    ],
-                    'benefits' => 'A supportive team, opportunities to learn, and meaningful work. This is sample content, not a live employer offer.',
-                    'status' => 'published', 'is_demo' => true,
-                    'is_featured' => $row['is_featured'] ?? ($row['id'] <= 10),
-                    'published_at' => now()->subDays($row['days']),
+                    ]);
+
+                $responsibilities = $row['responsibilities'] ?? [
+                    "Collaborate with your team to deliver high-quality work in {$row['category']}.",
+                    'Bring fresh ideas and a thoughtful approach to everyday challenges.',
+                    'Share progress, ask questions, and help your teammates succeed.',
+                    'Learn from feedback and continuously develop your skills.',
+                ];
+
+                JobPost::updateOrCreate(['slug' => Str::slug($row['company'].'-'.$row['title'])], [
+                    'company_id' => $company->id,
+                    'title' => $row['title'],
+                    'category' => $row['category'],
+                    'location' => $row['location'],
+                    'employment_type' => $row['type'],
+                    'work_mode' => $row['mode'],
+                    'salary_min' => $min,
+                    'salary_max' => $max,
+                    'description' => $row['description'] ?? "Join {$row['company']} as a {$row['title']} and help a growing team turn thoughtful ideas into useful experiences. This is an illustrative opportunity in {$row['location']}.",
+                    'responsibilities' => $responsibilities,
+                    'requirements' => $requirements,
+                    'benefits' => $row['benefits'] ?? 'A supportive team, opportunities to learn, and meaningful work. This is sample content, not a live employer offer.',
+                    'status' => 'published',
+                    'is_demo' => true,
+                    'is_featured' => $row['is_featured'] ?? false,
+                    'published_at' => now()->subDays($row['days'] ?? 1),
                 ]);
             }
         });
