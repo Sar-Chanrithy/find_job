@@ -1,4 +1,6 @@
-﻿export default function JobCard({ job, saved, toggle }) {
+export default function JobCard({ job, saved, toggle }) {
+  const isNegotiable = job.salary === 'Negotiable';
+
   return <article className="job-card">
     <div className="card-top">
       <span className="logo" style={{ color: job.color, background: job.color + '12' }}>{job.logo}</span>
@@ -8,7 +10,7 @@
     <h3><a href={`#/jobs/${job.id}`}>{job.title}</a></h3><p>{job.company}</p>
     <small>⌖ {job.location}, Cambodia</small>
     <div className="tags"><span>{job.type}</span><span>{job.mode}</span></div>
-    <p className="salary">{job.salary} <small>/ month</small></p>
+    <p className="salary">{job.salary} {!isNegotiable && <small>/ month</small>}</p>
     <div className="card-bottom"><small>{job.days} days ago</small><a href={`#/jobs/${job.id}`}>View job ↗</a></div>
   </article>;
 }

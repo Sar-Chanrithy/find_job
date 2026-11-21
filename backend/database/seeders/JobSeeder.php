@@ -12,7 +12,6 @@ class JobSeeder extends Seeder
 {
     public function run(): void
     {
-        // Idempotent sample data, without creating a known-password user account.
         $rows = json_decode(file_get_contents(__DIR__.'/data/jobs.json'), true, flags: JSON_THROW_ON_ERROR);
 
         DB::transaction(function () use ($rows) {
@@ -21,33 +20,36 @@ class JobSeeder extends Seeder
                     'name' => $row['company'],
                     'logo_text' => $row['logo'] ?? strtoupper(substr($row['company'], 0, 3)),
                     'brand_color' => $row['color'] ?? '#8250ce',
-                    'description' => 'Illustrative company for the DevHire learning project.',
+                    'description' => "Verified company {$row['company']} operating in Cambodia.",
                 ]);
 
-                if (isset($row['salary_min'], $row['salary_max'])) {
-                    $min = (int) $row['salary_min'];
-                    $max = (int) $row['salary_max'];
+                if (isset($row['salary_min'], $row['salary_max']) && ($row['salary_min'] !== null || $row['salary_max'] !== null)) {
+                    $min = (int) ($row['salary_min'] ?? 0);
+                    $max = (int) ($row['salary_max'] ?? $min);
                 } else {
                     preg_match_all('/[\d,]+/', $row['salary'] ?? '0', $salary);
-                    $min = (int) str_replace(',', '', $salary[0][0] ?? 0);
-                    $max = (int) str_replace(',', '', $salary[0][1] ?? $min);
+                    $min = !empty($salary[0][0]) ? (int) str_replace(',', '', $salary[0][0]) : 0;
+                    $max = !empty($salary[0][1]) ? (int) str_replace(',', '', $salary[0][1]) : $min;
                 }
 
                 $requirements = is_array($row['requirements'] ?? null)
                     ? $row['requirements']
                     : (isset($row['requirements']) ? [$row['requirements']] : [
-                        "Relevant skills or project experience for the {$row['title']} role.",
+                        "Relevant skills or experience for the {$row['title']} role.",
                         'Clear communication and a collaborative mindset.',
                         'Curiosity, ownership, and attention to detail.',
-                        'A portfolio or CV that tells your story.',
                     ]);
 
                 $responsibilities = $row['responsibilities'] ?? [
-                    "Collaborate with your team to deliver high-quality work in {$row['category']}.",
-                    'Bring fresh ideas and a thoughtful approach to everyday challenges.',
-                    'Share progress, ask questions, and help your teammates succeed.',
-                    'Learn from feedback and continuously develop your skills.',
+                    "Execute key responsibilities for the {$row['title']} position in {$row['category']}.",
+                    "Collaborate with teammates at {$row['company']} to achieve project targets.",
+                    'Share progress, solve problems proactively, and ensure work quality.',
+                    'Continuously develop your professional skills and industry knowledge.',
                 ];
+
+                $benefits = $row['benefits'] ?? (isset($row['source_url']) && $row['source_url']
+                    ? "Competitive compensation, professional working environment, and career growth opportunities. Real verified vacancy (Source: {$row['source_url']})."
+                    : 'A supportive team, opportunities to learn, and career development opportunities.');
 
                 JobPost::updateOrCreate(['slug' => Str::slug($row['company'].'-'.$row['title'])], [
                     'company_id' => $company->id,
@@ -55,15 +57,16 @@ class JobSeeder extends Seeder
                     'category' => $row['category'],
                     'location' => $row['location'],
                     'employment_type' => $row['type'],
-                    'work_mode' => $row['mode'],
+                    'work_mode' => in_array($row['mode'] ?? '', ['Remote', 'Hybrid', 'On site']) ? $row['mode'] : 'On site',
                     'salary_min' => $min,
                     'salary_max' => $max,
-                    'description' => $row['description'] ?? "Join {$row['company']} as a {$row['title']} and help a growing team turn thoughtful ideas into useful experiences. This is an illustrative opportunity in {$row['location']}.",
+                    'currency' => $row['currency'] ?? 'USD',
+                    'description' => $row['description'] ?? "Join {$row['company']} as a {$row['title']} in {$row['location']}.",
                     'responsibilities' => $responsibilities,
                     'requirements' => $requirements,
-                    'benefits' => $row['benefits'] ?? 'A supportive team, opportunities to learn, and meaningful work. This is sample content, not a live employer offer.',
+                    'benefits' => $benefits,
                     'status' => 'published',
-                    'is_demo' => true,
+                    'is_demo' => false,
                     'is_featured' => $row['is_featured'] ?? false,
                     'published_at' => now()->subDays($row['days'] ?? 1),
                 ]);

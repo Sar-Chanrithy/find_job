@@ -9,7 +9,10 @@ class JobResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        // Explicit public fields only: never serialize users or company owners.
+        $salaryText = ($this->salary_min > 0 && $this->salary_max > 0)
+            ? '$'.number_format($this->salary_min).' – $'.number_format($this->salary_max)
+            : (($this->salary_min > 0) ? '$'.number_format($this->salary_min).'+' : 'Negotiable');
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -20,7 +23,7 @@ class JobResource extends JsonResource
             'location' => $this->location,
             'type' => $this->employment_type,
             'mode' => $this->work_mode,
-            'salary' => '$'.number_format($this->salary_min).' – $'.number_format($this->salary_max),
+            'salary' => $salaryText,
             'currency' => $this->currency,
             'days' => (int) $this->published_at->diffInDays(now()),
             'published_at' => $this->published_at->toIso8601String(),
