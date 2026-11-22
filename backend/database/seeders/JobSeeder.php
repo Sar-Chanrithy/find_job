@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 class JobSeeder extends Seeder
 {d
-    public function run(): voi
+    public function run(): void
     {
         $rows = json_decode(file_get_contents(__DIR__.'/data/jobs.json'), true, flags: JSON_THROW_ON_ERROR);
 
