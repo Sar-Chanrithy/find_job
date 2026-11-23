@@ -42,7 +42,7 @@ export default function HeroBanner({ total }) {
     return () => window.clearInterval(timer);
   }, [rotating]);
 
-  function selectSlide(Next) {
+  function selectSlide(Nex) {
     setSlide((next + 2) % 2);
     setPlaying(false);
   }
