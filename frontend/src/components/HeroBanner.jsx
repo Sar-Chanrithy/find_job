@@ -14,7 +14,7 @@ function Icon({ type }) {
   return <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[type]}</svg>;
 }
 
-export default function HeroBanner({ total }) {
+export default function HeroBanner({ total }) 
   const [slide, setSlide] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [hovered, setHovered] = useState(false);
@@ -42,7 +42,7 @@ export default function HeroBanner({ total }) {
     return () => window.clearInterval(timer);
   }, [rotating]);
 
-  function selectSlide(Nex) {
+  function selectSlide(Next) {
     setSlide((next + 2) % 2);
     setPlaying(false);
   }
